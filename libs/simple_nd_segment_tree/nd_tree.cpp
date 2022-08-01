@@ -4,8 +4,20 @@
  */
 
 #include <iostream>
+#include <array>
+#include <initializer_list>
 
 using dim_t = uint64_t;
+
+// forward:
+template<uint n>
+struct ShapeND;
+
+template<uint n, uint org>
+ShapeND<n> shape_maker_aux(const std::array<dim_t, org>& arr, int index);
+
+template<uint n>
+ShapeND<n> shape_maker(const std::array<dim_t, n>& arr);
 
 // simple range types:
 
@@ -16,48 +28,69 @@ struct RangeND {
 };
 
 template<>
-struct RangeND<0> {
-    dim_t from, to;
-};
+struct RangeND<0> {};
 
 template<uint n>
 struct ShapeND {
     dim_t size;
     ShapeND<n - 1> next;
+    ShapeND() {}
+    ShapeND(const std::array<dim_t, n>& arr) {
+        *this = shape_maker<n>(arr);
+    }
 };
 
 template<>
-struct ShapeND<0> {
-    dim_t size;
-};
+struct ShapeND<0> {};
+
+template<uint n, uint org>
+ShapeND<n> shape_maker_aux(const std::array<dim_t, org>& arr, int index) {
+    ShapeND<n> out;
+    if constexpr(n >= 1) {
+        out.size = arr[index];
+        out.next = shape_maker_aux<n - 1, org>(arr, index + 1);
+    }
+    return out;
+}
+
+template<uint n>
+ShapeND<n> shape_maker(const std::array<dim_t, n>& arr) {
+    return shape_maker_aux<n, n>(arr, 0);
+}
 
 template<uint n, class ValType>
-struct TreeNode {
+struct TreeNode;
 
-};
-
-template<class ValType>
-struct TreeNode<0, ValType> {
-    
-};
+// main tree logic:
 
 template<uint n, class ValType>
 struct TreeNDAux {
     const ShapeND<n>& shape;
-    TreeND(const  ShapeND<n>& shape): shape(shape) {
+    TreeNDAux(const  ShapeND<n>& shape): shape(shape) {
 
     }
 };
 
-// template<class ValType>
-// struct TreeNDAux<0, ValType> {
+// main tree logic, node:
 
-// };
+template<uint n, class ValType>
+struct TreeNode {
+    static_assert(n > 1);
+    TreeNDAux<n - 1, ValType> sub_tree;
+};
 
+template<class ValType>
+struct TreeNode<1, ValType> {
+    ValType leaf_val;
+};
+
+// top-level wrapper + interface:
+// todo: ValType concept
 template<uint n, class ValType>
 class TreeND {
     ShapeND<n> shape;
-    TreeNDAux<n> tree;
+    TreeNDAux<n, ValType> tree;
+public:
     TreeND(ShapeND<n> shape):
         shape(shape),
         tree(shape) {
@@ -67,5 +100,5 @@ class TreeND {
 
 
 int main() {
-    RangeND<3> hmm;
+    TreeND<3, int> test_tree(shape_maker<3>({56, 3, 3}));
 }
