@@ -1,6 +1,6 @@
 /**
  * @file nd_tree.cpp
- * @brief TBD
+ * @brief point-segment TBD
  */
 
 #include <iostream>
@@ -126,9 +126,59 @@ public:
     }
 };
 
+enum QueryType {
+    Add, GetMax
+};
+
+struct QueryMessage {
+    QueryType type;
+    int64_t val;
+};
+
+struct AddSubMaxValue {
+    int64_t max;
+    int64_t lazy_add;
+
+    AddSubMaxValue() { max = 0; lazy_add = 0; }
+
+    // it might be needed to add left_range, right_range here:
+    void update_from_children(const AddSubMaxValue& left, const AddSubMaxValue& right) {
+        max = std::max(left.max, right.max);
+        lazy_add = 0;
+    }
+
+    void propagate_down(AddSubMaxValue& left, AddSubMaxValue& right) {
+        left.add(lazy_add);
+        right.add(lazy_add);
+        lazy_add = 0;
+    }
+
+    // when my shape covers query range:
+    void query(QueryMessage& mess) {
+        switch (mess.type) {
+            case GetMax:
+                mess.val = std::max(mess.val, max);
+                break;
+            case Add:
+                add(mess.val);
+                break;
+        }
+    }
+
+    template<uint n>
+    static AddSubMaxValue make_leaf(ShapeND<n> pos) {
+        return SimpleValue();
+    }
+
+private:
+    void add(int64_t v) {
+        max += v;
+        lazy_add += v;
+    }
+};
 
 
 int main() {
-    TreeND<3, int> test_tree(shape_maker<3>({56, 3, 3}));
-    TreeND<3, int> test_tree_2(ShapeND<3>({56, 3, 3}));
+    TreeND<3, AddSubMaxValue> test_tree(shape_maker<3>({56, 3, 3}));
+    TreeND<3, AddSubMaxValue> test_tree_2(ShapeND<3>({56, 3, 3}));
 }
