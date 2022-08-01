@@ -13,11 +13,20 @@ using dim_t = uint64_t;
 template<uint n>
 struct ShapeND;
 
+template<uint n>
+struct RangeND;
+
 template<uint n, uint org>
 ShapeND<n> shape_maker_aux(const std::array<dim_t, org>& arr, int index);
 
 template<uint n>
 ShapeND<n> shape_maker(const std::array<dim_t, n>& arr);
+
+template<uint n, uint org>
+RangeND<n> range_maker_aux(const std::array<std::pair<dim_t, dim_t>, org>& arr, int index);
+
+template<uint n>
+RangeND<n> range_maker(const std::array<std::pair<dim_t, dim_t>, n>& arr);
 
 // simple range types:
 
@@ -25,6 +34,10 @@ template<uint n>
 struct RangeND {
     dim_t from, to; // inclusive
     RangeND<n - 1> next;
+    RangeND() {}
+    RangeND(const std::array<std::pair<dim_t, dim_t>, n>& arr) {
+        *this = range_maker<n>(arr);
+    }
 };
 
 template<>
@@ -56,6 +69,22 @@ ShapeND<n> shape_maker_aux(const std::array<dim_t, org>& arr, int index) {
 template<uint n>
 ShapeND<n> shape_maker(const std::array<dim_t, n>& arr) {
     return shape_maker_aux<n, n>(arr, 0);
+}
+
+template<uint n, uint org>
+RangeND<n> range_maker_aux(const std::array<dim_t, org>& arr, int index) {
+    RangeND<n> out;
+    if constexpr(n >= 1) {
+        out.from = arr[index].first;
+        out.to = arr[index].second;
+        out.next = range_maker_aux<n - 1, org>(arr, index + 1);
+    }
+    return out;
+}
+
+template<uint n>
+RangeND<n> range_maker(const std::array<dim_t, n>& arr) {
+    return range_maker_aux<n, n>(arr, 0);
 }
 
 template<uint n, class ValType>
@@ -101,4 +130,5 @@ public:
 
 int main() {
     TreeND<3, int> test_tree(shape_maker<3>({56, 3, 3}));
+    TreeND<3, int> test_tree_2(ShapeND<3>({56, 3, 3}));
 }
