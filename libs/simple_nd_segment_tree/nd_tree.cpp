@@ -1,6 +1,6 @@
 /**
  * @file nd_tree.cpp
- * @brief point-segment TBD
+ * @brief TBD
  */
 
 #include <iostream>
@@ -72,7 +72,7 @@ ShapeND<n> shape_maker(const std::array<dim_t, n>& arr) {
 }
 
 template<uint n, uint org>
-RangeND<n> range_maker_aux(const std::array<dim_t, org>& arr, int index) {
+RangeND<n> range_maker_aux(const std::array<std::pair<dim_t, dim_t>, org>& arr, int index) {
     RangeND<n> out;
     if constexpr(n >= 1) {
         out.from = arr[index].first;
@@ -83,7 +83,7 @@ RangeND<n> range_maker_aux(const std::array<dim_t, org>& arr, int index) {
 }
 
 template<uint n>
-RangeND<n> range_maker(const std::array<dim_t, n>& arr) {
+RangeND<n> range_maker(const std::array<std::pair<dim_t, dim_t>, n>& arr) {
     return range_maker_aux<n, n>(arr, 0);
 }
 
@@ -117,12 +117,17 @@ struct TreeNode<1, ValType> {
 // todo: ValType concept
 template<uint n, class ValType>
 class TreeND {
+    typedef typename ValType::QueryType QueryType;
     ShapeND<n> shape;
     TreeNDAux<n, ValType> tree;
 public:
     TreeND(ShapeND<n> shape):
         shape(shape),
         tree(shape) {
+    }
+
+    void query(RangeND<n> range, QueryType& query) {
+
     }
 };
 
@@ -136,6 +141,8 @@ struct QueryMessage {
 };
 
 struct AddSubMaxValue {
+    typedef QueryMessage QueryType;
+    
     int64_t max;
     int64_t lazy_add;
 
@@ -167,7 +174,7 @@ struct AddSubMaxValue {
 
     template<uint n>
     static AddSubMaxValue make_leaf(ShapeND<n> pos) {
-        return SimpleValue();
+        return AddSubMaxValue();
     }
 
 private:
@@ -181,4 +188,8 @@ private:
 int main() {
     TreeND<3, AddSubMaxValue> test_tree(shape_maker<3>({56, 3, 3}));
     TreeND<3, AddSubMaxValue> test_tree_2(ShapeND<3>({56, 3, 3}));
+
+    QueryMessage mess;
+    test_tree_2.query(RangeND<3>({{{51, 55}, {1, 1}, {1, 2}}}), mess);
+    std::cout << mess.val << "\n";
 }
