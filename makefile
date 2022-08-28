@@ -7,7 +7,7 @@ CPP = g++
 CPPFLAGS = -Wall -Wextra
 
 #BIN = ./bin
-SRCS = ./libs/simple_nd_segment_tree/nd_tree.cpp
+SRCS = ./libs/pref_pref.cpp
 
 #SRCS_NAMES = $(notdir $(SRCS))
 
