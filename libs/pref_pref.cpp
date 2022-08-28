@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 
+// z algorithm 
 std::vector<int> pref_pref(std::string s) {
     int l = 0;
     int r = 0;
